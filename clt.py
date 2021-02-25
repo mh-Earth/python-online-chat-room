@@ -1,33 +1,32 @@
 import threading
 import socket 
-
+import colorama
 server=socket.socket(socket.AF_INET,type=socket.SOCK_STREAM)
-server.connect((socket.gethostname(),1556))
+server.connect((socket.gethostname(),1555))
 nickname=input("Enter your nickname:")
 def recvs():
     while True:
         try:
-            buff=100
-            msg=server.recv(buff)
+            msg=server.recv(2024)
             if msg.decode("utf-8")=="nick":
                 server.send(nickname.encode("utf-8"))
-            elif "Header" in (msg.decode('utf-8')):
-                buffSize=int(msg.decode('utf-8').split(","))
-                buff=int(buffSize[1])
-                print(buff)
+            
+            elif f'\033[91m{nickname}\033[91m,' in msg.decode('utf-8'):
+                pass
+
             else:
                 # print(msg.decode("utf-8"))
                 try:
                     msg=msg.decode("utf-8")
                     msg=msg.split(",")
-                    print(f"\n{msg[0]}:{msg[1]}")
-                    print(buff)
-                    buff=100
+                    # print(f'msg={msg}')
+                    if msg[1]=='\033[97mleave\033[97m':
+                        print(f"\033[91m[!]{msg[0]} leave the chat\033[91m")
+                    else:
+                        print(f"\033[32m{msg[0]}\033[32m:\033[97m{msg[1]}\033[97m")
                 except Exception as IndexError:
-                    try:
-                        print('\n'+msg.decode('utf-8'))
-                    except Exception as e:
-                        pass
+                    print(f'\033[93m{msg}\033[93m')
+
         except socket.error:
             print(socket.error())
             server.close()
@@ -36,8 +35,15 @@ def recvs():
 
 def write():
     while True:
-        massage=input(f"{nickname}:")
-        server.send((f"{nickname},{massage}").encode("utf-8"))
+        massage=input("\033[97m")
+        if massage=="leave":
+            server.send((f"\033[91m{nickname}\033[91m,\033[97m{massage}\033[97m").encode("utf-8"))
+            server.close()
+            break
+        if massage==" " or massage=="":
+            pass
+        else:
+            server.send((f"\033[91m{nickname}\033[91m,\033[97m{massage}\033[97m").encode("utf-8"))
 
 t1=threading.Thread(target=recvs).start()
 t2=threading.Thread(target=write).start()
